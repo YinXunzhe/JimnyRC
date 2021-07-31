@@ -20,6 +20,7 @@ class JimnyPlay:
 
     def play(self):
         """开始控制小车"""
+        self.jimny.initialize()
         while True:
             self._check_events()
             self.jimny.update()
