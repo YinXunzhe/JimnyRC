@@ -98,29 +98,36 @@ class JimnyPlay:
         if button_B:
             sys.exit()
         # button_X = self.joystick.get_button(3)
-
     def _check_joy_button_up(self,event):
         pass
     def _check_joy_axis_motion(self,event):
         # 控件与axis序号的对应关系：
-        # LS 0（左右）1（上下）, RS 2(左右) 3（上下）, LT 5, RT 4,
+        # LS 0（左-1,右1）,1（上-1,下1）；RS 2（左-1,右1） 3（上-1,下1）；
+        # LT 5（顶-1,底1）, RT 4（顶-1,底1）,按下扳机前读到的初始值为0，之后为-1
         # 左扳机控制速度大小
-        self.jimny.speed_axis=self.joystick.get_axis(5)+1     # axis value: -1 -> 1
+        # 按下扳机前会读到0,而非-1,导致马达转动，所以把0忽略掉
+        if self.joystick.get_axis(5) != 0:
+            self.settings.speed_axis_pos= self.joystick.get_axis(5)
+            print(f'speed_axis_pos:{self.settings.speed_axis_pos}\n')
         # 左摇杆控制转向和前进方向
         left_stick_x=self.joystick.get_axis(0)
+        # left_stick_x=round(self.joystick.get_axis(0),1)
         left_stick_y=self.joystick.get_axis(1)
         # 左转右转
-        if left_stick_x > 0:
-            self.jimny.moving_right = True
-        elif self.joystick.get_axis(0) < 0:
-            self.jimny.moving_left = True
+        # FIXME
+        # 摇杆的移动大于一定阈值时才进行转向控制
+        # if (abs(left_stick_x - self.settings.steer_axis_pos) > self.settings.steer_axis_delta):
+        if True:
+            self.settings.steer_axis_flag = True
+            self.settings.steer_axis_pos = left_stick_x
+            print(f'steer_axis_pos:{self.settings.steer_axis_pos}\n')
         else:
-            self.jimny.moving_right = False
-            self.jimny.moving_left = False
+            self.settings.steer_axis_flag = False
+
         # 前进后退
-        if left_stick_y > 0:
+        if left_stick_y > 0.5:
             self.jimny.moving_back = True
-        elif self.joystick.get_axis(0) < 0:
+        elif left_stick_y < -0.5:
             self.jimny.moving_forward = True
         else:
             self.jimny.moving_back = False
