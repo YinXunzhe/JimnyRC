@@ -20,6 +20,7 @@ class Settings:
         """初始化动态设置"""
         self.steer_freq = 50  # 舵机PWM频率
         self.steer_dc = 7.5  # 舵机PWM占空比
-        self.steer_sens=5   # 转向灵敏度 1-10
+        self.steer_step=0.25  # 转向步长
+        self.steer_sens=10   # 转向灵敏度 1-10
         self.motor_freq = 1000  # 电机PWM频率
         self.motor_dc = 0  # 电机PWM占空比
