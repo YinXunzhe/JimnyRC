@@ -34,3 +34,4 @@ class Settings:
         self.steer_finish_flag = True  # 完成一次转向控制的标志
         self.steer_sens_joystick=5  # 手柄控制的转向灵敏度
         self.steer_dc_delta=1 / self.steer_sens_joystick
+        self.steer_dc_step=0.1

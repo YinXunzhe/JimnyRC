@@ -97,17 +97,25 @@ class Jimny:
         print(f"compare  (steer_dc):{self.settings.steer_dc}")
         print(f"compare  (steer_dc_last):{self.settings.steer_dc_last}\n")
         # 超过上次的转向占空比一定阈值时才调整
-        if abs(self.settings.steer_dc-self.settings.steer_dc_last) > self.settings.steer_dc_delta:
+        if abs(self.settings.steer_dc-self.settings.steer_dc_last) > self.settings.steer_dc_step:
             # 开始调整前将转向完成标志置零
             self.settings.steer_finish_flag = False
-
             print(f"let's change dc to {self.settings.steer_dc}")
-            self.pwm_steer.ChangeDutyCycle(self.settings.steer_dc)
-            time.sleep(0.04)  # 等待控制周期
-            self.pwm_steer.ChangeDutyCycle(self.settings.steer_dc)
-            time.sleep(0.04)  # 等待控制周期
-            self.pwm_steer.ChangeDutyCycle(0)  # 清空占空比，防止抖动
-            print(f"when finish (steer_dc):{self.settings.steer_dc}\n")
+            # 按0.1的步长进行调整，使转向平稳
+            while abs(self.settings.steer_dc-self.settings.steer_dc_last) > self.settings.steer_dc_step:
+                if self.settings.steer_dc>self.settings.steer_dc_last:
+                    self.settings.steer_dc_last += self.settings.steer_dc_step
+                else:
+                    self.settings.steer_dc_last -= self.settings.steer_dc_step
+                self._steer_step(self.settings.steer_dc_last)
 
             self.settings.steer_dc_last=self.settings.steer_dc # 更新记录的占空比
             self.settings.steer_finish_flag = True  # 此次转向调整完成
+
+    def _steer_step(self,step):
+        # 按特定角度步进
+        self.pwm_steer.ChangeDutyCycle(step)
+        time.sleep(0.04)  # 等待控制周期
+        self.pwm_steer.ChangeDutyCycle(0)  # 清空占空比，防止抖动
+
+
