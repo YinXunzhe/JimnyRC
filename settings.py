@@ -27,7 +27,10 @@ class Settings:
 
         # 用于手柄控制的变量
         self.speed_axis_pos = -1    # 控制速度的轴读数
-        self.steer_axis_pos = 0     # 控制方向的轴读数，左负右正
-        self.steer_axis_flag = False
-        self.steer_sens_joystick=50  # 手柄控制的转向灵敏度
-        self.steer_axis_delta=1 / self.steer_sens_joystick
+        # self.steer_axis_pos_last = 0 # 上次控制方向的轴读数，左负右正
+        # self.steer_axis_pos = 0     # 本次控制方向的轴读数，左负右正
+        # self.steer_axis_flag = False
+        self.steer_dc_last=7.5  # 记录的上一次转向占空比
+        self.steer_finish_flag = True  # 完成一次转向控制的标志
+        self.steer_sens_joystick=5  # 手柄控制的转向灵敏度
+        self.steer_dc_delta=1 / self.steer_sens_joystick
