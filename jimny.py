@@ -1,5 +1,6 @@
 import RPi.GPIO as GPIO
 import time
+import numpy
 
 
 class Jimny:
@@ -93,29 +94,31 @@ class Jimny:
 
     def steer(self):
         # 转向
-        self.settings.steer_dc = round(-1.5 * self.settings.steer_axis_pos + 7.5,1)  # 占空比与轴读数的关系式
-        print(f"compare  (steer_dc):{self.settings.steer_dc}")
+        # 开始调整前将转向完成标志置零
+        self.settings.steer_finish_flag = False
+        # 根据占空比与轴读数的关系式计算，圆整至一位小数，防止频繁改变转向导致的抖动
+        target_steer_dc = round(-1.5 * self.settings.steer_axis_pos + 7.5,1)
+        print(f"compare  (target_steer_dc):{target_steer_dc}")
         print(f"compare  (steer_dc_last):{self.settings.steer_dc_last}\n")
-        # 超过上次的转向占空比一定阈值时才调整
-        if abs(self.settings.steer_dc-self.settings.steer_dc_last) > self.settings.steer_dc_step:
-            # 开始调整前将转向完成标志置零
-            self.settings.steer_finish_flag = False
-            print(f"let's change dc to {self.settings.steer_dc}")
+        i=0 # 调整次数
+        steer_dc_delta=target_steer_dc-self.settings.steer_dc_last
+        print(f"steer_dc_delta:{steer_dc_delta}")
+        # 当转向与目标存在偏差时进行调整
+        while steer_dc_delta:
             # 按0.1的步长进行调整，使转向平稳
-            while abs(self.settings.steer_dc-self.settings.steer_dc_last) > self.settings.steer_dc_step:
-                if self.settings.steer_dc>self.settings.steer_dc_last:
-                    self.settings.steer_dc_last += self.settings.steer_dc_step
-                else:
-                    self.settings.steer_dc_last -= self.settings.steer_dc_step
-                self._steer_step(self.settings.steer_dc_last)
+            self.settings.steer_dc_last += numpy.sign(steer_dc_delta)*self.settings.steer_dc_step
+            self.settings.steer_dc_last = round(self.settings.steer_dc_last,1)
+            self._steer_step(self.settings.steer_dc_last)
+            steer_dc_delta=target_steer_dc-self.settings.steer_dc_last
+            i += 1
+            print(f"\t第{i}次调整：{self.settings.steer_dc_last}")
 
-            self.settings.steer_dc_last=self.settings.steer_dc # 更新记录的占空比
-            self.settings.steer_finish_flag = True  # 此次转向调整完成
+        self.settings.steer_finish_flag = True  # 此次转向调整完成
 
     def _steer_step(self,step):
         # 按特定角度步进
         self.pwm_steer.ChangeDutyCycle(step)
-        time.sleep(0.04)  # 等待控制周期
+        time.sleep(0.02)  # 等待控制周期
         self.pwm_steer.ChangeDutyCycle(0)  # 清空占空比，防止抖动
 
 
