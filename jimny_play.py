@@ -94,12 +94,24 @@ class JimnyPlay:
 
     def _check_joy_button_down(self,event):
         # A0 B1 X3 Y4
+        button_Y = self.joystick.get_button(4)
+        button_X = self.joystick.get_button(3)
         button_B = self.joystick.get_button(1)
+        # Y 前进 X 后退
+        # 前进后退
+        if button_X:
+            self.jimny.moving_back = True
+        elif button_Y:
+            self.jimny.moving_forward = True
+        else:
+            self.jimny.moving_back = False
+            self.jimny.moving_forward = False
         if button_B:
             sys.exit()
-        # button_X = self.joystick.get_button(3)
     def _check_joy_button_up(self,event):
         pass
+
+
     def _check_joy_axis_motion(self,event):
         # 控件与axis序号的对应关系：
         # LS 0（左-1,右1）,1（上-1,下1）；RS 2（左-1,右1） 3（上-1,下1）；
@@ -111,9 +123,14 @@ class JimnyPlay:
             self.settings.speed_axis_pos= self.joystick.get_axis(5)
             # print(f'speed_axis_pos:{self.settings.speed_axis_pos}\n')
 
-        # 左摇杆控制转向和前进方向
+        # 右扳机控制刹车
+        if self.joystick.get_axis(4) >0:
+            self.jimny.motor_stop()
+        else:
+            self.jimny.moving_stop=False
+
+        # 左摇杆控制转向
         left_stick_x=self.joystick.get_axis(0)
-        left_stick_y=self.joystick.get_axis(1)
         # 左转右转
         # 当上次转向调整完成后才开始新的一轮转向控制
         if (self.settings.steer_finish_flag == True):
@@ -123,14 +140,6 @@ class JimnyPlay:
             self.settings.steer_axis_flag = True
             self.jimny.steer()
 
-        # 前进后退
-        if left_stick_y > 0.5:
-            self.jimny.moving_back = True
-        elif left_stick_y < -0.5:
-            self.jimny.moving_forward = True
-        else:
-            self.jimny.moving_back = False
-            self.jimny.moving_forward = False
 
 if __name__ == '__main__':
 

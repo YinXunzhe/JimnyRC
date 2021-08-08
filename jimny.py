@@ -3,7 +3,7 @@ import time
 import numpy
 
 import logging
-logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(level=logging.INFO)
 
 
 class Jimny:
@@ -81,19 +81,20 @@ class Jimny:
             self.pwm_motor.stop()
             self.moving_forward = False
             self.moving_back = False
-            if self.settings.motor_dc >30:    # 防止下次重新启动时速度过大
-                self.settings.motor_dc =30
+            self.settings.motor_dc = 0
 
     def _update_controller(self):
         """对手柄控制器输入的响应"""
-        # 变速  axis value: -1 -> 1 turn to 0->2   # speed： 0-2 ，dc：0-60
-        self.settings.motor_dc = 30 * (self.settings.speed_axis_pos + 1)
-        self.pwm_motor.ChangeDutyCycle(self.settings.motor_dc)
-        #  前进 后退
-        if self.moving_forward:
-            GPIO.output(self.settings.motor_dir_pin, GPIO.HIGH)
-        elif self.moving_back:
-            GPIO.output(self.settings.motor_dir_pin, GPIO.LOW)
+        if not self.moving_stop:
+            self.pwm_motor.start(self.settings.motor_dc)  # 防止之前已经关闭电机PWM
+            # 变速  axis value: -1 -> 1 turn to 0->2   # speed： 0-2 ，dc：0-100
+            self.settings.motor_dc = 50 * (self.settings.speed_axis_pos + 1)
+            self.pwm_motor.ChangeDutyCycle(self.settings.motor_dc)
+            #  前进 后退
+            if self.moving_forward:
+                GPIO.output(self.settings.motor_dir_pin, GPIO.HIGH)
+            elif self.moving_back:
+                GPIO.output(self.settings.motor_dir_pin, GPIO.LOW)
 
     def steer(self):
         # 转向
@@ -127,5 +128,13 @@ class Jimny:
         self.pwm_steer.ChangeDutyCycle(steer_dc)
         time.sleep(0.02)  # 等待控制周期
         self.pwm_steer.ChangeDutyCycle(0)  # 清空占空比，防止抖动
+
+    def motor_stop(self):
+        # self.pwm_motor.stop()
+        self.moving_stop=True
+        self.moving_forward = False
+        self.moving_back = False
+        self.settings.motor_dc = 0
+        self.pwm_motor.ChangeDutyCycle(self.settings.motor_dc)
 
 
