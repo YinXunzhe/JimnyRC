@@ -2,6 +2,9 @@ import RPi.GPIO as GPIO
 import time
 import numpy
 
+import logging
+logging.basicConfig(level=logging.INFO)
+
 
 class Jimny:
     """吉姆尼小车"""
@@ -96,28 +99,32 @@ class Jimny:
         # 转向
         # 开始调整前将转向完成标志置零
         self.settings.steer_finish_flag = False
-        # 根据占空比与轴读数的关系式计算，圆整至一位小数，防止频繁改变转向导致的抖动
+        # 根据占空比与轴读数的关系式计算目标占空比,并圆整至一位小数，防止频繁改变占空比导致的抖动
         target_steer_dc = round(-1.5 * self.settings.steer_axis_pos + 7.5,1)
-        print(f"compare  (target_steer_dc):{target_steer_dc}")
-        print(f"compare  (steer_dc_last):{self.settings.steer_dc_last}\n")
-        i=0 # 调整次数
+        # 计算目标值与当前的偏差
         steer_dc_delta=target_steer_dc-self.settings.steer_dc_last
-        print(f"steer_dc_delta:{steer_dc_delta}")
+
+        logging.info(f"compare  (target_steer_dc):{target_steer_dc}")
+        logging.info(f"-------  (steer_dc_last):{self.settings.steer_dc_last}\n")
+        logging.info(f"steer_dc_delta:{steer_dc_delta}")
+
         # 当转向与目标存在偏差时进行调整
+        i=0 # 调整次数
         while steer_dc_delta:
             # 按0.1的步长进行调整，使转向平稳
             self.settings.steer_dc_last += numpy.sign(steer_dc_delta)*self.settings.steer_dc_step
             self.settings.steer_dc_last = round(self.settings.steer_dc_last,1)
-            self._steer_step(self.settings.steer_dc_last)
+            self._steer_dc_change(self.settings.steer_dc_last)
             steer_dc_delta=target_steer_dc-self.settings.steer_dc_last
+
             i += 1
-            print(f"\t第{i}次调整：{self.settings.steer_dc_last}")
+            logging.info(f"\t第{i}次调整：{self.settings.steer_dc_last}")
 
         self.settings.steer_finish_flag = True  # 此次转向调整完成
 
-    def _steer_step(self,step):
-        # 按特定角度步进
-        self.pwm_steer.ChangeDutyCycle(step)
+    def _steer_dc_change(self, steer_dc):
+        # 调整舵机角度
+        self.pwm_steer.ChangeDutyCycle(steer_dc)
         time.sleep(0.02)  # 等待控制周期
         self.pwm_steer.ChangeDutyCycle(0)  # 清空占空比，防止抖动
 
